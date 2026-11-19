@@ -4,13 +4,16 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from redis import Redis
 from src.config.database import Base,engine
-from src.models import user,study,observation,run,review,audit
+from src.models import user,study,observation,run,review,audit,holdout,sample_key,gate
 from src.routes import auth,research
 from src.middlewares.errors import ErrorMiddleware
 from src.middlewares.rate_limit import RateLimitMiddleware
+from src.config.database import Session
+from src.services import studies as study_service
 @asynccontextmanager
 async def lifespan(app):
     Base.metadata.create_all(engine)
+    with Session() as db: study_service.backfill_provenance(db)
     if os.environ.get('SEED_DEMO')=='true':
         try:
             from scripts.seed_demo import seed

@@ -6,8 +6,10 @@ from src.config.domain import DOMAIN
 from src.models.user import User
 from src.models.study import Study
 from src.models.observation import Observation
-from src.models import run,review,audit
+from src.models import run,review,audit,holdout,sample_key,gate
+from src.models.sample_key import SampleKey
 from src.utils.security import hash_password
+from src.utils.serializers import now
 
 def seed():
     Base.metadata.create_all(engine)
@@ -37,6 +39,8 @@ def seed():
                 key=f'DEMO-{k+1}-{n+1:04}'
                 if not db.scalar(select(Observation.id).where(Observation.study_id==study.id,Observation.source_key==key)):
                     db.add(Observation(study_id=study.id,source_key=key,values=values))
+                if not db.scalar(select(SampleKey.id).where(SampleKey.study_id==study.id,SampleKey.source_key==key)):
+                    db.add(SampleKey(study_id=study.id,source_key=key,kind='exploration',created_at=now()))
         db.commit()
         counts={model.__tablename__:db.scalar(select(func.count()).select_from(model)) for model in (User,Study,Observation)}
         print(json.dumps(counts));return counts

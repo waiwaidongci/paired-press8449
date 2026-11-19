@@ -8,8 +8,9 @@ from src.schemas.study import StudyInput
 from src.schemas.observation import ObservationInput
 from src.schemas.run import RunInput
 from src.schemas.review import ReviewInput
+from src.schemas.gate import HoldoutInput,GateInput
 from src.controllers import research
-from src.services import runs,studies
+from src.services import runs,studies,gates
 from src.models.audit import Audit
 from src.models.observation import Observation
 from src.services.audits import log
@@ -34,6 +35,25 @@ def remove(id:int,row_id:int,db=Depends(get_db),user=Depends(writer)):
     row=db.get(Observation,row_id)
     if not row or row.study_id!=id: raise HTTPException(404,'记录不存在')
     db.delete(row);log(db,user,'observation.delete',row_id);db.commit();return {'deleted':True}
+@router.get('/studies/{id}/holdout')
+def holdout(id:int,db=Depends(get_db),user=Depends(current_user)):
+    return gates.list_holdout(db,id)
+@router.post('/studies/{id}/holdout')
+def register_holdout(id:int,data:HoldoutInput,db=Depends(get_db),user=Depends(writer)):
+    return gates.register_holdout(db,id,data,user)
+@router.get('/studies/{id}/gate/suggestion')
+def gate_suggestion(id:int,db=Depends(get_db),user=Depends(current_user)):
+    return gates.suggestion(db,id)
+@router.get('/studies/{id}/gate')
+def get_gate(id:int,db=Depends(get_db),user=Depends(current_user)):
+    return gates.get(db,id)
+@router.post('/studies/{id}/gate')
+def lock_gate(id:int,data:GateInput,db=Depends(get_db),user=Depends(writer)):
+    gate,created=gates.lock(db,id,data,user)
+    return {'gate':gate,'created':created}
+@router.get('/gates')
+def list_gates(db=Depends(get_db),user=Depends(current_user)):
+    return gates.list_gates(db)
 @router.get('/runs')
 def list_runs(db=Depends(get_db),user=Depends(current_user)): return runs.list_runs(db)
 @router.post('/runs')

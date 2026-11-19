@@ -1,1 +1,3 @@
 Schema v1 is defined by the SQLAlchemy models and created at startup via Base.metadata.create_all. For this local small application no destructive migration is run. Back up named db-data before modifying schemas.
+
+Schema v2 adds holdout_samples (quarantined readings), sample_keys (durable explored/holdout provenance, survives sample deletion) and threshold_gates (one frozen confirmatory judgment per study, unique study_id). create_all adds the new tables on startup; on first start the API backfills sample_keys from existing observations so previously explored keys can never become holdout samples.

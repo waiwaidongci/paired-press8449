@@ -4,8 +4,10 @@ from redis import Redis
 from sqlalchemy import select
 from src.config.database import Session
 from src.models.run import Run
-from src.models import user,study,observation,review,audit
+from src.models.gate import ThresholdGate
+from src.models import user,study,observation,review,audit,holdout,sample_key,gate
 from src.services.algorithm import calculate
+from src.services import gates as gate_service
 from src.utils.serializers import checksum
 redis=Redis.from_url(os.environ['REDIS_URL'])
 Path('/app/artifacts').mkdir(exist_ok=True)
@@ -13,6 +15,11 @@ Path('/app/artifacts').mkdir(exist_ok=True)
 with Session() as db:
     pending=list(db.scalars(select(Run).where(Run.status.in_(['queued','running']))))
     for run in pending: redis.rpush('analysis-queue',run.id)
+# Resume a confirmatory judgment frozen by a previous process. Resuming the
+# same row never creates a second judgment; already-completed gates are untouched.
+with Session() as db:
+    for frozen in db.scalars(select(ThresholdGate).where(ThresholdGate.result.is_(None))):
+        gate_service.resume(db,frozen)
 while True:
     Path('/tmp/worker-heartbeat').touch()
     job=redis.blpop('analysis-queue',timeout=2)

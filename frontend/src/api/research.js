@@ -1,3 +1,4 @@
 import {request,post} from './client.js';
 export const studies={list:()=>request('/studies'),create:x=>post('/studies',x),rows:id=>request(`/studies/${id}/observations`),save:(id,x,row)=>row?request(`/studies/${id}/observations/${row}`,{method:'PUT',body:JSON.stringify(x)}):post(`/studies/${id}/observations`,x),remove:(id,row)=>request(`/studies/${id}/observations/${row}`,{method:'DELETE'})};
 export const runs={list:()=>request('/runs'),create:x=>post('/runs',x),get:id=>request(`/runs/${id}`),review:(id,note)=>post(`/runs/${id}/review`,{note}),export:id=>request(`/runs/${id}/export`)};
+export const gates={holdout:id=>request(`/studies/${id}/holdout`),register:(id,x)=>post(`/studies/${id}/holdout`,x),suggestion:id=>request(`/studies/${id}/gate/suggestion`),lock:(id,threshold)=>post(`/studies/${id}/gate`,{threshold}),get:id=>request(`/studies/${id}/gate`),list:()=>request('/gates')};
